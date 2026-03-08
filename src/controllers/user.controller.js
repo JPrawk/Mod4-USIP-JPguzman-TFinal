@@ -25,21 +25,28 @@ export default {
       status
     } = req.query;
 
+    // Validar que orderBy sea un campo permitido
+    const allowedOrderBy = ['id', 'username', 'status'];
+    const safeOrderBy = allowedOrderBy.includes(orderBy) ? orderBy : 'id';
+
     let filtered = users;
 
+    // Búsqueda por username (ILIKE)
     if (search) {
       filtered = filtered.filter(u =>
         u.username.toLowerCase().includes(search.toLowerCase())
       );
     }
 
+    // Filtro por status
     if (status) {
       filtered = filtered.filter(u => u.status === status);
     }
 
+    // Ordenamiento dinámico
     filtered.sort((a, b) => {
-      let valA = a[orderBy];
-      let valB = b[orderBy];
+      let valA = a[safeOrderBy];
+      let valB = b[safeOrderBy];
 
       if (typeof valA === 'string') valA = valA.toLowerCase();
       if (typeof valB === 'string') valB = valB.toLowerCase();
@@ -51,11 +58,12 @@ export default {
       }
     });
 
+    // Paginación
     const total = filtered.length;
     const pages = Math.ceil(total / parseInt(limit));
     const start = (parseInt(page) - 1) * parseInt(limit);
     const data = filtered.slice(start, start + parseInt(limit))
-      .map(({ password, ...u }) => u);
+      .map(({ password, tasks, ...u }) => u);
 
     res.status(200).json({ total, page: parseInt(page), pages, data });
   },

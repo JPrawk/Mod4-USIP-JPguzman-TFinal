@@ -13,7 +13,7 @@ paths:
       summary: Obtener lista de usuarios
       description: Obtiene la lista de usuarios con filtros opcionales y paginación.
       responses:
-        '200':
+        "200":
           description: Lista paginada de usuarios
           content:
             application/json:
@@ -59,7 +59,7 @@ paths:
                 - username
                 - password
       responses:
-        '200':
+        "200":
           description: Usuario creado correctamente
           content:
             application/json:
@@ -82,11 +82,11 @@ paths:
                   createdAt:
                     type: string
                     format: date-time
-                    example: '2026-01-12T00:28:39.059Z'
+                    example: "2026-01-12T00:28:39.059Z"
                   updatedAt:
                     type: string
                     format: date-time
-                    example: '2026-01-12T00:28:39.059Z'
+                    example: "2026-01-12T00:28:39.059Z"
   /api/login:
     post:
       tags:
@@ -105,12 +105,12 @@ paths:
                   example: user
                 password:
                   type: string
-                  example: '123'
+                  example: "123"
               required:
                 - username
                 - password
       responses:
-        '200':
+        "200":
           description: Login exitoso, devuelve token JWT
           content:
             application/json:
@@ -139,7 +139,7 @@ paths:
             type: integer
             example: 1
       responses:
-        '200':
+        "200":
           description: Información del usuario
           content:
             application/json:
@@ -179,12 +179,12 @@ paths:
                   example: ctrigo
                 password:
                   type: string
-                  example: '123'
+                  example: "123"
               required:
                 - username
                 - password
       responses:
-        '200':
+        "200":
           description: Usuario actualizado correctamente
           content:
             application/json:
@@ -227,7 +227,7 @@ paths:
               required:
                 - status
       responses:
-        '200':
+        "200":
           description: Usuario actualizado parcialmente
           content:
             application/json:
@@ -250,11 +250,11 @@ paths:
                   createdAt:
                     type: string
                     format: date-time
-                    example: '2025-12-22T21:21:39.575Z'
+                    example: "2025-12-22T21:21:39.575Z"
                   updatedAt:
                     type: string
                     format: date-time
-                    example: '2026-01-12T01:13:10.723Z'
+                    example: "2026-01-12T01:13:10.723Z"
     delete:
       tags:
         - Usuarios
@@ -271,7 +271,7 @@ paths:
             type: integer
             example: 3
       responses:
-        '204':
+        "204":
           description: Usuario eliminado correctamente, sin contenido en la respuesta
   /api/tasks:
     get:
@@ -284,7 +284,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Lista paginada de tareas
           content:
             application/json:
@@ -328,7 +328,7 @@ paths:
               required:
                 - name
       responses:
-        '200':
+        "200":
           description: Tarea creada correctamente
           content:
             application/json:
@@ -350,11 +350,11 @@ paths:
                   createdAt:
                     type: string
                     format: date-time
-                    example: '2026-01-12T01:22:37.180Z'
+                    example: "2026-01-12T01:22:37.180Z"
                   updatedAt:
                     type: string
                     format: date-time
-                    example: '2026-01-12T01:22:37.180Z'
+                    example: "2026-01-12T01:22:37.180Z"
   /api/tasks/{id}:
     get:
       tags:
@@ -374,7 +374,7 @@ paths:
             type: integer
             example: 38
       responses:
-        '200':
+        "200":
           description: Información de la tarea
           content:
             application/json:
@@ -415,7 +415,7 @@ paths:
               required:
                 - name
       responses:
-        '200':
+        "200":
           description: Tarea actualizada correctamente
           content:
             application/json:
@@ -455,7 +455,7 @@ paths:
               required:
                 - done
       responses:
-        '200':
+        "200":
           description: Tarea actualizada parcialmente
           content:
             application/json:
@@ -481,7 +481,7 @@ paths:
             type: integer
             example: 48
       responses:
-        '204':
+        "204":
           description: Tarea eliminada correctamente, sin contenido en la respuesta
   /api/users/:id/tasks:
     get:
@@ -490,7 +490,7 @@ paths:
       summary: Obtener usuario con sus tareas
       description: Obtiene la lista de usuario con sus tareas.
       responses:
-        '200':
+        "200":
           description: Lista de tareas
           content:
             application/json:
@@ -541,6 +541,10 @@ paths:
           schema:
             type: string
             default: id
+            enum:
+              - id
+              - username
+              - status
             example: id
         - name: orderDir
           in: query
@@ -569,7 +573,7 @@ paths:
             default: active
             example: active
       responses:
-        '200':
+        "200":
           description: Lista paginada de usuarios
           content:
             application/json:
