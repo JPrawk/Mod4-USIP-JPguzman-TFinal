@@ -2,16 +2,176 @@ openapi: 3.0.0
 info:
   title: API con Express
   version: 1.0.0
-  description: Documentación de la API (Swagger + Express)
+  description: |
+    Documentación de la API REST con Express y JWT.
+
+    ## Autor
+    Juan Pablo Guzmán
+
+    ## Cambios
+    - v1.0.0: Implementación inicial de endpoints de Usuarios, Auth y Tareas
+    - ✅ NUEVO: Agregado endpoint GET /api/users/list/pagination
+      - Parámetros: page, limit, search, orderBy, orderDir
+      - Ejemplo: /api/users/list/pagination?page=1&limit=5&search=use&orderBy=username&orderDir=DESC
+      - Respuesta: total, page, pages, data (id, username, status)
+
 servers:
   - url: http://localhost:3000
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+tags:
+  - name: Usuarios
+    description: Endpoints de gestión de usuarios
+  - name: Auth
+    description: Endpoints de autenticación
+  - name: Tareas
+    description: Endpoints de gestión de tareas
+
 paths:
   /api/users:
     get:
       tags:
         - Usuarios
       summary: Obtener lista de usuarios
-      description: Obtiene la lista de usuarios con filtros opcionales y paginación.
+      description: Obtiene la lista completa de usuarios.
+      responses:
+        "200":
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 5
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        username:
+                          type: string
+                          example: ctrigo
+                        status:
+                          type: string
+                          example: active
+    post:
+      tags:
+        - Usuarios
+      summary: Crear un nuevo usuario
+      description: Crea un usuario con username y password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: user
+                password:
+                  type: string
+                  example: "123"
+      responses:
+        "201":
+          description: Usuario creado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 6
+                  username:
+                    type: string
+                    example: user
+                  status:
+                    type: string
+                    example: active
+        "400":
+          description: Datos inválidos
+
+  /api/users/list/pagination:
+    get:
+      tags:
+        - Usuarios
+      summary: "✅ NUEVO - Obtener lista de usuarios con paginación"
+      description: |
+        Obtiene la lista de usuarios con filtros opcionales y paginación.
+
+        **Ejemplo:**
+        `/api/users/list/pagination?page=1&limit=5&search=use&orderBy=username&orderDir=DESC`
+
+        **Respuesta:**
+        | Campo | Comentario | Ejemplo |
+        |-------|-----------|---------|
+        | total | Total de registros | 20 |
+        | page | Número de página | 1 |
+        | pages | Páginas en total | 2 |
+        | data | json de la respuesta (id, username, status) | [...] |
+      parameters:
+        - name: page
+          in: query
+          description: Número de la página
+          required: false
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          description: Cantidad de registros a mostrar
+          required: false
+          schema:
+            type: integer
+            default: 10
+            enum: [5, 10, 15, 20]
+            example: 10
+        - name: search
+          in: query
+          description: Búsqueda de username que tengan dicha palabra (ILIKE), si no existe search mostrar todos
+          required: false
+          schema:
+            type: string
+            example: use
+        - name: orderBy
+          in: query
+          description: Valor por ordenar
+          required: false
+          schema:
+            type: string
+            default: id
+            enum:
+              - id
+              - username
+              - status
+            example: id
+        - name: orderDir
+          in: query
+          description: Dirección por ordenar
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - ASC
+              - DESC
+            example: DESC
       responses:
         "200":
           description: Lista paginada de usuarios
@@ -21,6 +181,12 @@ paths:
                 type: object
                 properties:
                   total:
+                    type: integer
+                    example: 20
+                  page:
+                    type: integer
+                    example: 1
+                  pages:
                     type: integer
                     example: 2
                   data:
@@ -36,104 +202,19 @@ paths:
                           example: ctrigo
                         status:
                           type: string
-                          example: ACTIVO
-    post:
-      tags:
-        - Usuarios
-      summary: Crear un nuevo usuario
-      description: Crea un usuario con username y password. Devuelve el usuario creado.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  example: user
-                password:
-                  type: string
-                  example: password
-              required:
-                - username
-                - password
-      responses:
-        "200":
-          description: Usuario creado correctamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                    example: 1
-                  username:
-                    type: string
-                    example: user
-                  status:
-                    type: string
-                    example: ACTIVO
-                  password:
-                    type: string
-                    example: >-
-                      $2b$10$QjTqsJLp6iD/2njoEGqIr.rgUj0dCn49o6jIqf9/bzhXk/W/XLzIK
-                  createdAt:
-                    type: string
-                    format: date-time
-                    example: "2026-01-12T00:28:39.059Z"
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    example: "2026-01-12T00:28:39.059Z"
-  /api/login:
-    post:
-      tags:
-        - Auth
-      summary: Login de usuario
-      description: Autentica un usuario y devuelve un token JWT.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  example: user
-                password:
-                  type: string
-                  example: "123"
-              required:
-                - username
-                - password
-      responses:
-        "200":
-          description: Login exitoso, devuelve token JWT
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    example: eyJhbGciOiJIUzI1NiIs...
+                          example: active
+
   /api/users/{id}:
     get:
       tags:
         - Usuarios
       summary: Obtener usuario por ID
-      description: >-
-        Devuelve la información de un usuario específico por su ID. Requiere
-        token Bearer.
+      description: Devuelve la información de un usuario específico. Requiere token Bearer.
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
-          description: ID del usuario a consultar
           required: true
           schema:
             type: integer
@@ -146,12 +227,19 @@ paths:
               schema:
                 type: object
                 properties:
+                  id:
+                    type: integer
+                    example: 1
                   username:
                     type: string
-                    example: user
+                    example: ctrigo
                   status:
                     type: string
-                    example: ACTIVO
+                    example: active
+        "401":
+          description: Token no proporcionado o inválido
+        "404":
+          description: Usuario no encontrado
     put:
       tags:
         - Usuarios
@@ -162,7 +250,6 @@ paths:
       parameters:
         - name: id
           in: path
-          description: ID del usuario a actualizar
           required: true
           schema:
             type: integer
@@ -173,6 +260,9 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - username
+                - password
               properties:
                 username:
                   type: string
@@ -180,33 +270,25 @@ paths:
                 password:
                   type: string
                   example: "123"
-              required:
-                - username
-                - password
       responses:
         "200":
           description: Usuario actualizado correctamente
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: integer
-                  example: 1
-                description: Cantidad de registros actualizados
+        "400":
+          description: Datos inválidos
+        "401":
+          description: Token no proporcionado o inválido
+        "404":
+          description: Usuario no encontrado
     patch:
       tags:
         - Usuarios
       summary: Actualizar parcialmente usuario por ID
-      description: >-
-        Actualiza parcialmente un usuario (por ejemplo, su status). Requiere
-        token Bearer.
+      description: Actualiza el status de un usuario. Requiere token Bearer.
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
-          description: ID del usuario a actualizar
           required: true
           schema:
             type: integer
@@ -217,44 +299,24 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - status
               properties:
                 status:
                   type: string
                   enum:
-                    - ACTIVO
-                    - INACTIVO
-                  example: ACTIVO
-              required:
-                - status
+                    - active
+                    - inactive
+                  example: active
       responses:
         "200":
           description: Usuario actualizado parcialmente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                    example: 1
-                  username:
-                    type: string
-                    example: user
-                  status:
-                    type: string
-                    example: ACTIVO
-                  password:
-                    type: string
-                    example: >-
-                      $2b$10$QjTqsJLp6iD/2njoEGqIr.rgUj0dCn49o6jIqf9/bzhXk/W/XLzIK
-                  createdAt:
-                    type: string
-                    format: date-time
-                    example: "2025-12-22T21:21:39.575Z"
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    example: "2026-01-12T01:13:10.723Z"
+        "400":
+          description: Datos inválidos
+        "401":
+          description: Token no proporcionado o inválido
+        "404":
+          description: Usuario no encontrado
     delete:
       tags:
         - Usuarios
@@ -265,233 +327,34 @@ paths:
       parameters:
         - name: id
           in: path
-          description: ID del usuario a eliminar
           required: true
           schema:
             type: integer
-            example: 3
+            example: 1
       responses:
         "204":
-          description: Usuario eliminado correctamente, sin contenido en la respuesta
-  /api/tasks:
-    get:
-      tags:
-        - Tareas
-      summary: Obtener lista de tareas
-      description: >-
-        Obtiene la lista de tareas del usuario autenticado con filtros
-        opcionales y paginación.
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Lista paginada de tareas
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  total:
-                    type: integer
-                    example: 1
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                          example: 38
-                        name:
-                          type: string
-                          example: Estudiar
-                        done:
-                          type: boolean
-                          example: false
-    post:
-      tags:
-        - Tareas
-      summary: Crear una nueva tarea
-      description: Crea una tarea asociada al usuario autenticado. Requiere token Bearer.
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: Estudiar
-              required:
-                - name
-      responses:
-        "200":
-          description: Tarea creada correctamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                    example: 38
-                  name:
-                    type: string
-                    example: Estudiar
-                  done:
-                    type: boolean
-                    example: false
-                  userId:
-                    type: integer
-                    example: 4
-                  createdAt:
-                    type: string
-                    format: date-time
-                    example: "2026-01-12T01:22:37.180Z"
-                  updatedAt:
-                    type: string
-                    format: date-time
-                    example: "2026-01-12T01:22:37.180Z"
-  /api/tasks/{id}:
-    get:
-      tags:
-        - Tareas
-      summary: Obtener tarea por ID
-      description: >-
-        Devuelve la información de una tarea específica por su ID. Requiere
-        token Bearer.
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          description: ID de la tarea a consultar
-          required: true
-          schema:
-            type: integer
-            example: 38
-      responses:
-        "200":
-          description: Información de la tarea
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    example: Estudiar
-                  done:
-                    type: boolean
-                    example: false
-    put:
-      tags:
-        - Tareas
-      summary: Actualizar tarea por ID
-      description: Actualiza completamente una tarea existente. Requiere token Bearer.
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          description: ID de la tarea a actualizar
-          required: true
-          schema:
-            type: integer
-            example: 38
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: Trabajar
-              required:
-                - name
-      responses:
-        "200":
-          description: Tarea actualizada correctamente
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: integer
-                  example: 1
-                description: Cantidad de registros actualizados
-    patch:
-      tags:
-        - Tareas
-      summary: Actualizar parcialmente tarea por ID
-      description: >-
-        Actualiza parcialmente una tarea (por ejemplo, marcarla como done).
-        Requiere token Bearer.
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          description: ID de la tarea a actualizar
-          required: true
-          schema:
-            type: integer
-            example: 38
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                done:
-                  type: boolean
-                  example: true
-              required:
-                - done
-      responses:
-        "200":
-          description: Tarea actualizada parcialmente
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: integer
-                  example: 1
-                description: Cantidad de registros actualizados
-    delete:
-      tags:
-        - Tareas
-      summary: Eliminar tarea por ID
-      description: Elimina una tarea existente. Requiere token Bearer.
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          description: ID de la tarea a eliminar
-          required: true
-          schema:
-            type: integer
-            example: 48
-      responses:
-        "204":
-          description: Tarea eliminada correctamente, sin contenido en la respuesta
-  /api/users/:id/tasks:
+          description: Usuario eliminado correctamente
+        "401":
+          description: Token no proporcionado o inválido
+        "404":
+          description: Usuario no encontrado
+
+  /api/users/{id}/tasks:
     get:
       tags:
         - Usuarios
       summary: Obtener usuario con sus tareas
-      description: Obtiene la lista de usuario con sus tareas.
+      description: Obtiene un usuario con la lista de sus tareas.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
       responses:
         "200":
-          description: Lista de tareas
+          description: Usuario con sus tareas
           content:
             application/json:
               schema:
@@ -507,74 +370,62 @@ paths:
                       properties:
                         name:
                           type: string
-                          example: tarea 2
+                          example: Tarea 1
                         done:
                           type: boolean
                           example: false
-  /api/users/list/pagination:
-    get:
+        "404":
+          description: Usuario no encontrado
+
+  /api/login:
+    post:
       tags:
-        - Usuarios
-      summary: Obtener lista de usuarios
-      description: Obtiene la lista de usuarios con filtros opcionales y paginación.
-      parameters:
-        - name: limit
-          in: query
-          description: Cantidad máxima de registros por página
-          required: false
-          schema:
-            type: integer
-            default: 10
-            example: 10
-        - name: page
-          in: query
-          description: Número de página
-          required: false
-          schema:
-            type: integer
-            default: 1
-            example: 1
-        - name: orderby
-          in: query
-          description: Campo para ordenar
-          required: false
-          schema:
-            type: string
-            default: id
-            enum:
-              - id
-              - username
-              - status
-            example: id
-        - name: orderDir
-          in: query
-          description: Dirección del ordenamiento (ASC o DESC)
-          required: false
-          schema:
-            type: string
-            default: DESC
-            example: DESC
-        - name: search
-          in: query
-          description: Texto para buscar dentro de los usernames
-          required: false
-          schema:
-            type: string
-            example: ctr
-        - name: status
-          in: query
-          description: Filtrar por estado del usuario
-          required: false
-          schema:
-            type: string
-            enum:
-              - active
-              - inactive
-            default: active
-            example: active
+        - Auth
+      summary: Login de usuario
+      description: Autentica un usuario y devuelve un token JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: ctrigo
+                password:
+                  type: string
+                  example: "123"
       responses:
         "200":
-          description: Lista paginada de usuarios
+          description: Login exitoso, devuelve token JWT
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIs...
+        "400":
+          description: Datos inválidos
+        "401":
+          description: Credenciales inválidas
+
+  /api/tasks:
+    get:
+      tags:
+        - Tareas
+      summary: Obtener lista de tareas
+      description: Obtiene las tareas del usuario autenticado. Requiere token Bearer.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lista de tareas
           content:
             application/json:
               schema:
@@ -583,12 +434,6 @@ paths:
                   total:
                     type: integer
                     example: 2
-                  page:
-                    type: integer
-                    example: 1
-                  pages:
-                    type: integer
-                    example: 1
                   data:
                     type: array
                     items:
@@ -597,9 +442,151 @@ paths:
                         id:
                           type: integer
                           example: 1
-                        username:
+                        name:
                           type: string
-                          example: ctrigo
-                        status:
-                          type: string
-                          example: active
+                          example: Estudiar
+                        done:
+                          type: boolean
+                          example: false
+        "401":
+          description: Token no proporcionado o inválido
+    post:
+      tags:
+        - Tareas
+      summary: Crear una nueva tarea
+      description: Crea una tarea asociada al usuario autenticado. Requiere token Bearer.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: Estudiar
+      responses:
+        "201":
+          description: Tarea creada correctamente
+        "400":
+          description: Datos inválidos
+        "401":
+          description: Token no proporcionado o inválido
+
+  /api/tasks/{id}:
+    get:
+      tags:
+        - Tareas
+      summary: Obtener tarea por ID
+      description: Devuelve una tarea específica. Requiere token Bearer.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        "200":
+          description: Información de la tarea
+        "401":
+          description: Token no proporcionado o inválido
+        "404":
+          description: Tarea no encontrada
+    put:
+      tags:
+        - Tareas
+      summary: Actualizar tarea por ID
+      description: Actualiza completamente una tarea. Requiere token Bearer.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: Trabajar
+      responses:
+        "200":
+          description: Tarea actualizada correctamente
+        "400":
+          description: Datos inválidos
+        "401":
+          description: Token no proporcionado o inválido
+        "404":
+          description: Tarea no encontrada
+    patch:
+      tags:
+        - Tareas
+      summary: Actualizar parcialmente tarea por ID
+      description: Marca una tarea como done. Requiere token Bearer.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - done
+              properties:
+                done:
+                  type: boolean
+                  example: true
+      responses:
+        "200":
+          description: Tarea actualizada parcialmente
+        "400":
+          description: Datos inválidos
+        "401":
+          description: Token no proporcionado o inválido
+        "404":
+          description: Tarea no encontrada
+    delete:
+      tags:
+        - Tareas
+      summary: Eliminar tarea por ID
+      description: Elimina una tarea existente. Requiere token Bearer.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        "204":
+          description: Tarea eliminada correctamente
+        "401":
+          description: Token no proporcionado o inválido
+        "404":
+          description: Tarea no encontrada
