@@ -1,9 +1,11 @@
-let users = [
-  { id: 1, username: 'ctrigo', password: '123', status: 'active', tasks: [] },
-  { id: 2, username: 'jperez', password: '123', status: 'inactive', tasks: [] },
-  { id: 3, username: 'agarcia', password: '123', status: 'active', tasks: [] },
-  { id: 4, username: 'mrojas', password: '123', status: 'active', tasks: [] },
-  { id: 5, username: 'llopez', password: '123', status: 'inactive', tasks: [] }
+import { tasks } from './task.controller.js';
+
+export let users = [
+  { id: 1, username: 'ctrigo', password: '123', status: 'active' },
+  { id: 2, username: 'jperez', password: '123', status: 'inactive' },
+  { id: 3, username: 'agarcia', password: '123', status: 'active' },
+  { id: 4, username: 'mrojas', password: '123', status: 'active' },
+  { id: 5, username: 'llopez', password: '123', status: 'inactive' }
 ];
 
 export default {
@@ -25,25 +27,28 @@ export default {
       status
     } = req.query;
 
-    // Validar que orderBy sea un campo permitido
+    const allowedLimits = [5, 10, 15, 20];
+    const safeLimit = allowedLimits.includes(parseInt(limit)) ? parseInt(limit) : 10;
+
     const allowedOrderBy = ['id', 'username', 'status'];
     const safeOrderBy = allowedOrderBy.includes(orderBy) ? orderBy : 'id';
 
-    let filtered = users;
+    const safeOrderDir = ['ASC', 'DESC'].includes(orderDir.toUpperCase())
+      ? orderDir.toUpperCase()
+      : 'DESC';
 
-    // Búsqueda por username (ILIKE)
+    let filtered = [...users];
+
     if (search) {
       filtered = filtered.filter(u =>
         u.username.toLowerCase().includes(search.toLowerCase())
       );
     }
 
-    // Filtro por status
     if (status) {
       filtered = filtered.filter(u => u.status === status);
     }
 
-    // Ordenamiento dinámico
     filtered.sort((a, b) => {
       let valA = a[safeOrderBy];
       let valB = b[safeOrderBy];
@@ -51,19 +56,19 @@ export default {
       if (typeof valA === 'string') valA = valA.toLowerCase();
       if (typeof valB === 'string') valB = valB.toLowerCase();
 
-      if (orderDir.toUpperCase() === 'ASC') {
+      if (safeOrderDir === 'ASC') {
         return valA > valB ? 1 : -1;
       } else {
         return valA < valB ? 1 : -1;
       }
     });
 
-    // Paginación
     const total = filtered.length;
-    const pages = Math.ceil(total / parseInt(limit));
-    const start = (parseInt(page) - 1) * parseInt(limit);
-    const data = filtered.slice(start, start + parseInt(limit))
-      .map(({ password, tasks, ...u }) => u);
+    const pages = Math.ceil(total / safeLimit);
+    const start = (parseInt(page) - 1) * safeLimit;
+    const data = filtered
+      .slice(start, start + safeLimit)
+      .map(({ password, ...u }) => u);
 
     res.status(200).json({ total, page: parseInt(page), pages, data });
   },
@@ -76,16 +81,22 @@ export default {
       return res.status(400).json({ message: 'Username y password son requeridos' });
     }
 
+    const exists = users.find(u => u.username === username);
+    if (exists) {
+      return res.status(400).json({ message: 'El username ya está en uso' });
+    }
+
     const newUser = {
       id: users.length + 1,
       username,
       password,
       status: 'active',
-      tasks: []
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     users.push(newUser);
-    const { password: _, tasks: __, ...response } = newUser;
+    const { password: _, ...response } = newUser;
     res.status(201).json(response);
   },
 
@@ -93,7 +104,7 @@ export default {
   getUserById: (req, res) => {
     const user = users.find(u => u.id === parseInt(req.params.id));
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
-    const { password, tasks, ...response } = user;
+    const { password, ...response } = user;
     res.status(200).json(response);
   },
 
@@ -107,7 +118,12 @@ export default {
       return res.status(400).json({ message: 'Username y password son requeridos' });
     }
 
-    users[index] = { ...users[index], username, password };
+    users[index] = {
+      ...users[index],
+      username,
+      password,
+      updatedAt: new Date().toISOString()
+    };
     res.status(200).json([1]);
   },
 
@@ -119,8 +135,17 @@ export default {
     const { status } = req.body;
     if (!status) return res.status(400).json({ message: 'Status es requerido' });
 
-    users[index] = { ...users[index], status };
-    const { password, tasks, ...response } = users[index];
+    const allowedStatus = ['active', 'inactive'];
+    if (!allowedStatus.includes(status)) {
+      return res.status(400).json({ message: 'Status debe ser active o inactive' });
+    }
+
+    users[index] = {
+      ...users[index],
+      status,
+      updatedAt: new Date().toISOString()
+    };
+    const { password, ...response } = users[index];
     res.status(200).json(response);
   },
 
@@ -138,6 +163,10 @@ export default {
     const user = users.find(u => u.id === parseInt(req.params.id));
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
-    res.status(200).json({ username: user.username, tasks: user.tasks });
+    const userTasks = tasks
+      .filter(t => t.userId === user.id)
+      .map(({ id, userId, createdAt, updatedAt, ...t }) => t);
+
+    res.status(200).json({ username: user.username, tasks: userTasks });
   }
 };

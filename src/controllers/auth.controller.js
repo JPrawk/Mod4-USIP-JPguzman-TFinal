@@ -1,14 +1,6 @@
 import jwt from 'jsonwebtoken';
 import env from '../config/env.js';
-
-// Simulando usuarios en memoria (misma lista que user.controller.js)
-const users = [
-  { id: 1, username: 'ctrigo', password: '123', status: 'active' },
-  { id: 2, username: 'jperez', password: '123', status: 'inactive' },
-  { id: 3, username: 'agarcia', password: '123', status: 'active' },
-  { id: 4, username: 'mrojas', password: '123', status: 'active' },
-  { id: 5, username: 'llopez', password: '123', status: 'inactive' }
-];
+import { users } from './user.controller.js';
 
 const login = (req, res) => {
   const { username, password } = req.body;
